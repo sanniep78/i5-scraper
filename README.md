@@ -44,3 +44,19 @@ Beautiful responsive interface featuring:
 - Direct links to listings
 - Live stats (total vehicles, best discount)
 - Christmas theme with animated snowflakes
+
+## Security & Rate Limiting
+
+Protection against abuse:
+- **Rate limiting:** 3 scraper runs per IP per hour
+- **Password protection:** Optional password for scraper endpoint
+- **Local dev mode:** Works without password when `SCRAPER_PASSWORD` not set
+
+### Render Deployment
+
+Set environment variable in Render dashboard:
+```
+SCRAPER_PASSWORD=your_secret_password
+```
+
+Users will be prompted for password on first scraper run. Password stored in browser localStorage.

@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
+from rate_limiter import rate_limit, simple_auth
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
@@ -21,6 +22,8 @@ def index():
 
 
 @app.route('/api/scrape', methods=['POST'])
+@rate_limit(max_requests=3, window_seconds=3600)  # 3 requests per hour
+@simple_auth  # Requires password if SCRAPER_PASSWORD env var is set
 def scrape():
     """Execute the i5-scraper script"""
     try:

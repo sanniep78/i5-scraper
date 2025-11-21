@@ -479,18 +479,42 @@
             const error = document.getElementById('error');
             const success = document.getElementById('success');
 
+            // Get password from localStorage or prompt
+            let password = localStorage.getItem('scraper_password');
+            if (!password) {
+                password = prompt('Enter scraper password (leave empty for local dev):');
+                if (password) {
+                    localStorage.setItem('scraper_password', password);
+                }
+            }
+
             btn.disabled = true;
             loading.classList.add('active');
             error.classList.remove('active');
             success.classList.remove('active');
 
             try {
+                const headers = {};
+                if (password) {
+                    headers['X-Password'] = password;
+                }
+
                 const response = await fetch(`${API_URL}/api/scrape`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: headers
                 });
                 const data = await response.json();
 
-                if (data.success) {
+                if (response.status === 401) {
+                    // Invalid password - clear and retry
+                    localStorage.removeItem('scraper_password');
+                    error.textContent = 'Invalid password. Please refresh and try again.';
+                    error.classList.add('active');
+                } else if (response.status === 429) {
+                    // Rate limit exceeded
+                    error.textContent = data.error + ` (${data.reset_in_seconds}s remaining)`;
+                    error.classList.add('active');
+                } else if (data.success) {
                     success.textContent = 'Scraper completed successfully!';
                     success.classList.add('active');
                     setTimeout(() => loadVehicles(), 1000);
