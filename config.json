@@ -1,0 +1,72 @@
+{
+  "filters": {
+    "serie": "BMW i",
+    "model": {
+      "i5": "1"      
+    },
+
+    "chassis": {
+      "Sedan": "1"
+    },
+
+    "price": {
+      "min": "",
+      "max": "60000"
+    },
+    "mileage": {
+      "min": "",
+      "max": "50000"
+    },
+    "datePartOne": {
+      "min": "",
+      "max": ""
+    },
+    "options": {
+      "12": "1",
+      "882": "1"
+    }
+    
+  },
+  "option_definitions": {
+    "12": "M Sportpakket",
+    "407": "Model xLine",
+    "1143": "Roadstyle Edition",
+    "99": "Lederen bekleding",
+    "882": "Comfortstoelen",
+    "20": "Sportstoelen",
+    "693": "Elektrisch verstelbare voorstoelen",
+    "734": "Stoelverwarming",
+    "461": "Stuurwielrand verwarmd",
+    "130": "Derde zitrij",
+    "48": "Head-up Display",
+    "81": "Navigatiesysteem Professional",
+    "252": "Entertainmentsysteem Professional Achterin",
+    "568": "HiFi Systeem",
+    "361": "LED Koplampen",
+    "806": "BMW Laserlicht",
+    "94": "Trekhaak",
+    "773": "Panorama-/schuifdak",
+    "108": "Automatische airconditioning",
+    "110": "Voorverwarming interieur",
+    "30": "Achteruitrijcamera",
+    "43": "Park Distance Control",
+    "39": "Comfort Access",
+    "42": "Cruise Control",
+    "1131": "Active Cruise Control",
+    "29": "xDrive - Vierwielaandrijving",
+    "56": "Sportonderstel",
+    "139": "Active Steering / Variable Sport Steering",
+    "119": "Windscherm"
+  },
+  "comments": {
+    "filters": "Active filters applied to search",
+    "serie": "BMW series (e.g., 'BMW i', 'BMW 3 Serie')",
+    "model": "Model variants (i5, i7, etc). Set value to '1' to enable",
+    "chassis": "Body type. Options: Sedan, Touring, Cabrio, Coupe, etc",
+    "price": "Price range in euros. Leave min/max empty for no limit",
+    "mileage": "Mileage range in kilometers. Leave min/max empty for no limit",
+    "datePartOne": "Build year range. Format: YYYY. Leave empty for all years",
+    "options": "Equipment options. Set option ID to '1' to require it. See option_definitions for IDs",
+    "option_definitions": "Reference list of all available equipment options and their IDs"
+  }
+}

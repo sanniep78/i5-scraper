@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMW i5 Scraper Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.5s;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body.christmas {
+            background: linear-gradient(135deg, #165b33 0%, #c41e3a 100%);
+        }
+
+        .snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+
+        body.christmas .snowflakes {
+            display: block;
+        }
+
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: white;
+            font-size: 1em;
+            user-select: none;
+            animation: fall linear infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #1c54b2;
+            font-size: 2.5em;
+            font-weight: 700;
+            transition: color 0.5s;
+        }
+
+        body.christmas .header h1 {
+            color: #c41e3a;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #1c54b2, #2563eb);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            transition: background 0.5s;
+        }
+
+        body.christmas .stat-box {
+            background: linear-gradient(135deg, #c41e3a, #165b33);
+        }
+
+        .stat-box .number {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-box .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1c54b2, #2563eb);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        body.christmas .btn {
+            background: linear-gradient(135deg, #c41e3a, #165b33);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(28, 84, 178, 0.4);
+        }
+
+        body.christmas .btn:hover {
+            box-shadow: 0 5px 15px rgba(196, 30, 58, 0.4);
+        }
+
+        .btn-theme {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            margin-left: auto;
+        }
+
+        body.christmas .btn-theme {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        body.christmas .btn-secondary {
+            background: linear-gradient(135deg, #165b33, #0f7a42);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            display: none;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .vehicles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+        }
+
+        .vehicle-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .vehicle-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .vehicle-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background: #f3f4f6;
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: background 0.5s;
+        }
+
+        body.christmas .discount-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #1f2937;
+        }
+
+        .vehicle-info {
+            padding: 20px;
+        }
+
+        .vehicle-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1c54b2;
+            margin-bottom: 10px;
+            transition: color 0.5s;
+        }
+
+        body.christmas .vehicle-name {
+            color: #c41e3a;
+        }
+
+        .vehicle-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            color: #6b7280;
+            font-size: 0.85em;
+            margin-bottom: 3px;
+        }
+
+        .detail-value {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .price-section {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .price-label {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+
+        .price-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .catalogue-price {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+
+        .actual-price {
+            color: #10b981;
+            font-size: 1.3em;
+        }
+
+        .view-listing {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #1c54b2, #2563eb);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        body.christmas .view-listing {
+            background: linear-gradient(135deg, #c41e3a, #165b33);
+        }
+
+        .view-listing:hover {
+            background: linear-gradient(135deg, #2563eb, #1c54b2);
+            transform: translateY(-2px);
+        }
+
+        body.christmas .view-listing:hover {
+            background: linear-gradient(135deg, #165b33, #c41e3a);
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .success {
+            background: #d1fae5;
+            color: #059669;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success.active {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span id="headerIcon">🚗</span> BMW i5 Dashboard</h1>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="number" id="vehicleCount">0</div>
+                    <div class="label">Vehicles</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="bestDiscount">0%</div>
+                    <div class="label">Best Discount</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="scrapeBtn" onclick="runScraper()">
+                <span>🔄</span>
+                <span>Run Scraper</span>
+            </button>
+            <button class="btn btn-secondary" onclick="loadVehicles()">
+                <span>📊</span>
+                <span>Refresh Data</span>
+            </button>
+            <button class="btn btn-theme" onclick="toggleTheme()">
+                <span id="themeIcon">🎄</span>
+                <span id="themeText">Christmas Mode</span>
+            </button>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                Processing...
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+
+        <div class="vehicles-grid" id="vehiclesGrid"></div>
+    </div>
+
+    <div class="snowflakes" id="snowflakes"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+
+        function toggleTheme() {
+            const body = document.body;
+            const isChristmas = body.classList.toggle('christmas');
+
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            const headerIcon = document.getElementById('headerIcon');
+
+            if (isChristmas) {
+                themeIcon.textContent = '🎅';
+                themeText.textContent = 'Normal Mode';
+                headerIcon.textContent = '🎄';
+                createSnowflakes();
+                localStorage.setItem('theme', 'christmas');
+            } else {
+                themeIcon.textContent = '🎄';
+                themeText.textContent = 'Christmas Mode';
+                headerIcon.textContent = '🚗';
+                document.getElementById('snowflakes').innerHTML = '';
+                localStorage.setItem('theme', 'normal');
+            }
+        }
+
+        function createSnowflakes() {
+            const container = document.getElementById('snowflakes');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 50; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.textContent = '❄';
+                snowflake.style.left = Math.random() * 100 + '%';
+                snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                snowflake.style.animationDelay = Math.random() * 5 + 's';
+                snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                container.appendChild(snowflake);
+            }
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'christmas') {
+                toggleTheme();
+            }
+        });
+
+        async function runScraper() {
+            const btn = document.getElementById('scrapeBtn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const success = document.getElementById('success');
+
+            btn.disabled = true;
+            loading.classList.add('active');
+            error.classList.remove('active');
+            success.classList.remove('active');
+
+            try {
+                const response = await fetch(`${API_URL}/api/scrape`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    success.textContent = 'Scraper completed successfully!';
+                    success.classList.add('active');
+                    setTimeout(() => loadVehicles(), 1000);
+                } else {
+                    error.textContent = `Error: ${data.error}`;
+                    error.classList.add('active');
+                }
+            } catch (err) {
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('active');
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        async function loadVehicles() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const grid = document.getElementById('vehiclesGrid');
+
+            loading.classList.add('active');
+            error.classList.remove('active');
+
+            try {
+                const response = await fetch(`${API_URL}/api/vehicles`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayVehicles(data.vehicles);
+                    updateStats(data.vehicles);
+                } else {
+                    error.textContent = `Error: ${data.error}`;
+                    error.classList.add('active');
+                }
+            } catch (err) {
+                error.textContent = `Error: ${err.message}. Make sure the server is running.`;
+                error.classList.add('active');
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        function updateStats(vehicles) {
+            document.getElementById('vehicleCount').textContent = vehicles.length;
+
+            const discounts = vehicles
+                .map(v => parseFloat(v.discount_percent || 0))
+                .filter(d => d > 0);
+
+            const bestDiscount = discounts.length > 0 ? Math.max(...discounts) : 0;
+            document.getElementById('bestDiscount').textContent = `${bestDiscount.toFixed(1)}%`;
+        }
+
+        function displayVehicles(vehicles) {
+            const grid = document.getElementById('vehiclesGrid');
+            grid.innerHTML = '';
+
+            vehicles.forEach(vehicle => {
+                const card = createVehicleCard(vehicle);
+                grid.appendChild(card);
+            });
+        }
+
+        function createVehicleCard(v) {
+            const card = document.createElement('div');
+            card.className = 'vehicle-card';
+
+            const discount = parseFloat(v.discount_percent || 0);
+            const hasDiscount = discount > 0;
+
+            card.innerHTML = `
+                <img src="${v.image || 'https://via.placeholder.com/400x250?text=No+Image'}"
+                     alt="${v.name}"
+                     class="vehicle-image"
+                     onerror="this.src='https://via.placeholder.com/400x250?text=No+Image'">
+
+                ${hasDiscount ? `<div class="discount-badge">-${discount}%</div>` : ''}
+
+                <div class="vehicle-info">
+                    <div class="vehicle-name">${v.name || 'Unknown'}</div>
+
+                    <div class="vehicle-details">
+                        <div class="detail-item">
+                            <span class="detail-label">License Plate</span>
+                            <span class="detail-value">${v.license_plate || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">First Registration</span>
+                            <span class="detail-value">${v.first_registration || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Mileage</span>
+                            <span class="detail-value">${formatNumber(v.mileage)} km</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Color</span>
+                            <span class="detail-value">${v.color || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Dealer</span>
+                            <span class="detail-value">${v.dealer || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">City</span>
+                            <span class="detail-value">${v.city || 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    <div class="price-section">
+                        ${v.catalogue_price ? `
+                            <div class="price-row">
+                                <span class="price-label">Catalogue Price</span>
+                                <span class="price-value catalogue-price">€${formatNumber(v.catalogue_price)}</span>
+                            </div>
+                        ` : ''}
+                        <div class="price-row">
+                            <span class="price-label">Selling Price</span>
+                            <span class="price-value actual-price">€${formatNumber(v.price)}</span>
+                        </div>
+                    </div>
+
+                    <a href="${v.url}" target="_blank" class="view-listing">View Listing →</a>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function formatNumber(num) {
+            if (!num) return '0';
+            return parseInt(num).toLocaleString('nl-NL');
+        }
+
+        // Load vehicles on page load
+        loadVehicles();
+    </script>
+</body>
+</html>
