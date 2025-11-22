@@ -8,6 +8,8 @@ venv/
 ENV/
 *.csv
 *.json
+!config.json
+!vehicle_history.json
 *.xlsx
 .env
 .DS_Store

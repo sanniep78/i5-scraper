@@ -60,6 +60,9 @@ def scrape():
 def get_vehicles():
     """Get latest enriched vehicle data merged with raw data"""
     try:
+        # Get sort parameter (default: discount)
+        sort_by = request.args.get('sort', 'discount')
+
         # Find most recent files
         enriched_files = list(Path('.').glob('vehicles_enriched_*.csv'))
         raw_files = list(Path('.').glob('vehicles_raw_*.json'))
@@ -104,17 +107,39 @@ def get_vehicles():
 
             vehicles.append(vehicle)
 
-        # Sort by discount descending
-        vehicles.sort(
-            key=lambda x: float(x.get('discount_percent', '0') or '0'),
-            reverse=True
-        )
+        # Sort based on parameter
+        if sort_by == 'newest':
+            # Sort by first_seen descending (newest first)
+            vehicles.sort(
+                key=lambda x: x.get('first_seen', ''),
+                reverse=True
+            )
+        elif sort_by == 'oldest':
+            # Sort by first_seen ascending (oldest first)
+            vehicles.sort(
+                key=lambda x: x.get('first_seen', '')
+            )
+        elif sort_by == 'price_low':
+            vehicles.sort(
+                key=lambda x: int(x.get('price', '0') or '0')
+            )
+        elif sort_by == 'price_high':
+            vehicles.sort(
+                key=lambda x: int(x.get('price', '0') or '0'),
+                reverse=True
+            )
+        else:  # Default: discount
+            vehicles.sort(
+                key=lambda x: float(x.get('discount_percent', '0') or '0'),
+                reverse=True
+            )
 
         return jsonify({
             'success': True,
             'vehicles': vehicles,
             'file': str(latest_enriched),
-            'count': len(vehicles)
+            'count': len(vehicles),
+            'sort': sort_by
         })
     except Exception as e:
         return jsonify({

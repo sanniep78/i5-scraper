@@ -22,6 +22,7 @@ except ImportError:
 
 BASE_URL = "https://occasions.bmw.nl/bmw/zoeken/resultaten"
 CONFIG_FILE = Path(__file__).parent / "config.json"
+HISTORY_FILE = Path(__file__).parent / "vehicle_history.json"
 
 
 def load_config():
@@ -34,6 +35,20 @@ def load_config():
         config = json.load(f)
 
     return config.get('filters', {})
+
+
+def load_vehicle_history():
+    """Load vehicle history (first_seen dates) from JSON file"""
+    if HISTORY_FILE.exists():
+        with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+
+def save_vehicle_history(history):
+    """Save vehicle history to JSON file"""
+    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(history, f, indent=2)
 
 
 def build_php_serialized_filters(filters, page_num):
@@ -229,6 +244,23 @@ def scrape_all(dedup=True):
             print(f"Unique vehicles: {len(unique_vehicles)}")
             all_vehicles = unique_vehicles
 
+    # Track first_seen dates
+    history = load_vehicle_history()
+    today = datetime.now().strftime('%Y-%m-%d')
+    new_count = 0
+
+    for v in all_vehicles:
+        vid = v.get('vehicleId')
+        if vid and vid not in history:
+            history[vid] = today
+            new_count += 1
+        v['first_seen'] = history.get(vid, today)
+
+    save_vehicle_history(history)
+
+    if new_count > 0:
+        print(f"New listings today: {new_count}")
+
     return all_vehicles
 
 
@@ -298,6 +330,7 @@ def save_csv(vehicles, filename, fetch_plates=False):
             'color': v.get('color', ''),
             'dealer': v.get('dealerName', ''),
             'city': v.get('dealerCity', ''),
+            'first_seen': v.get('first_seen', ''),
         })
 
         if fetch_plates:
@@ -415,7 +448,7 @@ def main():
             # Re-save CSV with license plates
             import csv as csv_module
             with open(csv_file, 'w', newline='', encoding='utf-8-sig') as f:
-                writer = csv_module.DictWriter(f, fieldnames=['license_plate', 'vehicle_id', 'url', 'name', 'model', 'chassis', 'price', 'mileage', 'year', 'fuel', 'transmission', 'engine', 'color', 'dealer', 'city'])
+                writer = csv_module.DictWriter(f, fieldnames=['license_plate', 'vehicle_id', 'url', 'name', 'model', 'chassis', 'price', 'mileage', 'year', 'fuel', 'transmission', 'engine', 'color', 'dealer', 'city', 'first_seen'])
                 writer.writeheader()
                 for v in vehicles:
                     vehicle_id = v.get('vehicleId', '')
@@ -435,6 +468,7 @@ def main():
                         'color': v.get('color', ''),
                         'dealer': v.get('dealerName', ''),
                         'city': v.get('dealerCity', ''),
+                        'first_seen': v.get('first_seen', ''),
                     })
             print(f"Updated {csv_file} with license plates")
 
@@ -452,7 +486,7 @@ def main():
         # Re-save CSV with license plates
         import csv as csv_module
         with open(csv_file, 'w', newline='', encoding='utf-8-sig') as f:
-            writer = csv_module.DictWriter(f, fieldnames=['license_plate', 'vehicle_id', 'url', 'name', 'model', 'chassis', 'price', 'mileage', 'year', 'fuel', 'transmission', 'engine', 'color', 'dealer', 'city'])
+            writer = csv_module.DictWriter(f, fieldnames=['license_plate', 'vehicle_id', 'url', 'name', 'model', 'chassis', 'price', 'mileage', 'year', 'fuel', 'transmission', 'engine', 'color', 'dealer', 'city', 'first_seen'])
             writer.writeheader()
             for v in vehicles:
                 vehicle_id = v.get('vehicleId', '')
@@ -472,6 +506,7 @@ def main():
                     'color': v.get('color', ''),
                     'dealer': v.get('dealerName', ''),
                     'city': v.get('dealerCity', ''),
+                    'first_seen': v.get('first_seen', ''),
                 })
         print(f"Updated {csv_file} with license plates")
 
