@@ -181,6 +181,63 @@
             font-size: 0.9em;
         }
 
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            color: #6b7280;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #1c54b2;
+        }
+
+        body.christmas .filter-select:focus {
+            border-color: #c41e3a;
+        }
+
+        .filter-input {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95em;
+            width: 100px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #1c54b2;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .divider {
+            width: 1px;
+            height: 30px;
+            background: #e5e7eb;
+        }
+
         .loading {
             display: none;
             color: #666;
@@ -397,21 +454,58 @@
         </div>
 
         <div class="controls">
-            <button class="btn" id="scrapeBtn" onclick="runScraper()">
-                <span>🔄</span>
-                <span>Run Scraper</span>
-            </button>
-            <button class="btn btn-secondary" onclick="loadVehicles()">
-                <span>📊</span>
-                <span>Refresh Data</span>
-            </button>
-            <button class="btn btn-theme" onclick="toggleTheme()">
-                <span id="themeIcon">🎄</span>
-                <span id="themeText">Christmas Mode</span>
-            </button>
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                Processing...
+            <div class="controls-row">
+                <button class="btn" id="scrapeBtn" onclick="runScraper()">
+                    <span>🔄</span>
+                    <span>Run Scraper</span>
+                </button>
+                <button class="btn btn-secondary" onclick="loadVehicles()">
+                    <span>📊</span>
+                    <span>Refresh Data</span>
+                </button>
+
+                <div class="divider"></div>
+
+                <div class="filter-group">
+                    <label for="sortSelect">Sort:</label>
+                    <select id="sortSelect" class="filter-select" onchange="loadVehicles()">
+                        <option value="discount">Best Discount</option>
+                        <option value="newest">Newest Listed</option>
+                        <option value="oldest">Oldest Listed</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="maxPriceFilter">Max Price:</label>
+                    <select id="maxPriceFilter" class="filter-select" onchange="applyFilters()">
+                        <option value="">All</option>
+                        <option value="55000">€55,000</option>
+                        <option value="57500">€57,500</option>
+                        <option value="60000">€60,000</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="maxMileageFilter">Max Mileage:</label>
+                    <select id="maxMileageFilter" class="filter-select" onchange="applyFilters()">
+                        <option value="">All</option>
+                        <option value="10000">10,000 km</option>
+                        <option value="25000">25,000 km</option>
+                        <option value="40000">40,000 km</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-theme" onclick="toggleTheme()">
+                    <span id="themeIcon">🎄</span>
+                    <span id="themeText">Christmas Mode</span>
+                </button>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    Processing...
+                </div>
             </div>
         </div>
 
@@ -425,6 +519,7 @@
 
     <script>
         const API_URL = 'http://localhost:5000';
+        let allVehicles = []; // Store all vehicles for client-side filtering
 
         function toggleTheme() {
             const body = document.body;
@@ -535,17 +630,18 @@
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const grid = document.getElementById('vehiclesGrid');
+            const sortBy = document.getElementById('sortSelect').value;
 
             loading.classList.add('active');
             error.classList.remove('active');
 
             try {
-                const response = await fetch(`${API_URL}/api/vehicles`);
+                const response = await fetch(`${API_URL}/api/vehicles?sort=${sortBy}`);
                 const data = await response.json();
 
                 if (data.success) {
-                    displayVehicles(data.vehicles);
-                    updateStats(data.vehicles);
+                    allVehicles = data.vehicles; // Store for filtering
+                    applyFilters();
                 } else {
                     error.textContent = `Error: ${data.error}`;
                     error.classList.add('active');
@@ -556,6 +652,24 @@
             } finally {
                 loading.classList.remove('active');
             }
+        }
+
+        function applyFilters() {
+            const maxPrice = document.getElementById('maxPriceFilter').value;
+            const maxMileage = document.getElementById('maxMileageFilter').value;
+
+            let filtered = allVehicles;
+
+            if (maxPrice) {
+                filtered = filtered.filter(v => parseInt(v.price || 0) <= parseInt(maxPrice));
+            }
+
+            if (maxMileage) {
+                filtered = filtered.filter(v => parseInt(v.mileage || 0) <= parseInt(maxMileage));
+            }
+
+            displayVehicles(filtered);
+            updateStats(filtered);
         }
 
         function updateStats(vehicles) {
@@ -621,6 +735,10 @@
                         <div class="detail-item">
                             <span class="detail-label">City</span>
                             <span class="detail-value">${v.city || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Listed</span>
+                            <span class="detail-value">${v.first_seen || 'N/A'}</span>
                         </div>
                     </div>
 
