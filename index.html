@@ -468,7 +468,7 @@
 
                 <div class="filter-group">
                     <label for="sortSelect">Sort:</label>
-                    <select id="sortSelect" class="filter-select" onchange="loadVehicles()">
+                    <select id="sortSelect" class="filter-select" onchange="applyFilters()">
                         <option value="discount">Best Discount</option>
                         <option value="newest">Newest Listed</option>
                         <option value="oldest">Oldest Listed</option>
@@ -518,8 +518,9 @@
     <div class="snowflakes" id="snowflakes"></div>
 
     <script>
-        const API_URL = 'http://localhost:5000';
-        let allVehicles = []; // Store all vehicles for client-side filtering
+        // Use relative URL for API calls (works on both localhost and deployed)
+        const API_URL = '';
+        let allVehicles = []; // Store all vehicles for client-side filtering/sorting
 
         function toggleTheme() {
             const body = document.body;
@@ -630,13 +631,12 @@
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const grid = document.getElementById('vehiclesGrid');
-            const sortBy = document.getElementById('sortSelect').value;
 
             loading.classList.add('active');
             error.classList.remove('active');
 
             try {
-                const response = await fetch(`${API_URL}/api/vehicles?sort=${sortBy}`);
+                const response = await fetch(`${API_URL}/api/vehicles`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -655,17 +655,39 @@
         }
 
         function applyFilters() {
+            const sortBy = document.getElementById('sortSelect').value;
             const maxPrice = document.getElementById('maxPriceFilter').value;
             const maxMileage = document.getElementById('maxMileageFilter').value;
 
-            let filtered = allVehicles;
+            let filtered = [...allVehicles]; // Clone array for sorting
 
+            // Apply filters
             if (maxPrice) {
                 filtered = filtered.filter(v => parseInt(v.price || 0) <= parseInt(maxPrice));
             }
 
             if (maxMileage) {
                 filtered = filtered.filter(v => parseInt(v.mileage || 0) <= parseInt(maxMileage));
+            }
+
+            // Apply sorting
+            switch (sortBy) {
+                case 'newest':
+                    filtered.sort((a, b) => (b.first_seen || '').localeCompare(a.first_seen || ''));
+                    break;
+                case 'oldest':
+                    filtered.sort((a, b) => (a.first_seen || '').localeCompare(b.first_seen || ''));
+                    break;
+                case 'price_low':
+                    filtered.sort((a, b) => parseInt(a.price || 0) - parseInt(b.price || 0));
+                    break;
+                case 'price_high':
+                    filtered.sort((a, b) => parseInt(b.price || 0) - parseInt(a.price || 0));
+                    break;
+                case 'discount':
+                default:
+                    filtered.sort((a, b) => parseFloat(b.discount_percent || 0) - parseFloat(a.discount_percent || 0));
+                    break;
             }
 
             displayVehicles(filtered);
