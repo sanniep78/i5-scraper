@@ -28,7 +28,7 @@ def scrape():
     """Execute the i5-scraper script"""
     try:
         result = subprocess.run(
-            [sys.executable, 'i5-scraper.py', '--no-check'],
+            [sys.executable, 'i5-scraper.py', '--no-check', '--auto-rdw'],
             capture_output=True,
             text=True,
             timeout=600
